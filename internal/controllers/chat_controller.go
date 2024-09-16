@@ -83,13 +83,11 @@ func ShowChat(c echo.Context) error {
         return c.String(http.StatusNotFound, err.Error())
     }
 
+    var messages []ChatMessage
+
     query := `
         SELECT * FROM messages join chat.chats c on c.id = messages.chat_id where c.name = ?;
     `
-
-    var messages []ChatMessage
-
-    fmt.Println(c.Param("chatName"))
 
     db.Connection().Raw(query, c.Param("chatName")).Scan(&messages)
 
