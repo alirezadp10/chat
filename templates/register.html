@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: linear-gradient(120deg, #dadada, #cdcdcd);
+        }
+        .register-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+        }
+        .register-header {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2980b9;
+        }
+        .form-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .form-grid .input-group {
+            flex: 1;
+            min-width: calc(50% - 10px); /* Adjusts to two columns with space between */
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            color: #34495e;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            border-color: #2980b9;
+            outline: none;
+        }
+        .register-button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2980b9;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+        .register-button:hover {
+            background-color: #3498db;
+        }
+        .register-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .register-footer a {
+            color: #2980b9;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .register-footer a:hover {
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+
+<div class="register-container">
+    <h1 class="register-header">Register</h1>
+    <form id="register-form">
+        <div class="form-grid">
+            <div class="input-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password-confirm">Confirm Password</label>
+                <input type="password" id="password-confirm" name="password-confirm" required>
+            </div>
+
+            <div class="input-group">
+                <label for="avatar">Avatar URL</label>
+                <input type="text" id="avatar" name="avatar" placeholder="Optional">
+            </div>
+        </div>
+
+        <button type="submit" class="register-button">Register</button>
+    </form>
+
+    <div class="register-footer">
+        <p>Already have an account? <a href="/login">Login here</a></p>
+    </div>
+</div>
+
+<script>
+    document.getElementById('register-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const password = document.getElementById('password').value;
+        const passwordConfirm = document.getElementById('password-confirm').value;
+
+        if (password !== passwordConfirm) {
+            alert('Passwords do not match.');
+            return;
+        }
+
+        const formData = new FormData(this);
+        const data = {
+            name: formData.get('name'),
+            username: formData.get('username'),
+            email: formData.get('email'),
+            password: formData.get('password'),
+            avatar: formData.get('avatar')
+        };
+
+        fetch('http://localhost:8080/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === "success") {
+                    // Redirect or perform other actions after successful registration
+                    window.location.href = '/chat/templates/login.html'; // Redirect to login page
+                } else {
+                    alert('Registration failed: ' + result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred during registration.');
+            });
+    });
+</script>
+
+</body>
+</html>
