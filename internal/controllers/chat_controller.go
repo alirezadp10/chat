@@ -4,26 +4,11 @@ import (
     "fmt"
     "github.com/alirezadp10/chat/internal/db"
     "github.com/alirezadp10/chat/internal/models"
+    "github.com/alirezadp10/chat/internal/mqtt"
     "github.com/alirezadp10/chat/pkg/utils"
-    MQTT "github.com/eclipse/paho.mqtt.golang"
     "github.com/labstack/echo/v4"
     "net/http"
 )
-
-// Message handler for received messages
-var messagePubHandler MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
-    fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
-}
-
-// Message handler for successful connection
-var connectHandler MQTT.OnConnectHandler = func(client MQTT.Client) {
-    fmt.Println("Connected to MQTT broker")
-}
-
-// Handler for connection lost
-var connectLostHandler MQTT.ConnectionLostHandler = func(client MQTT.Client, err error) {
-    fmt.Printf("Connection lost: %v\n", err)
-}
 
 type ChatParticipant struct {
     Name     string
@@ -108,32 +93,57 @@ func ShowChat(c echo.Context) error {
 }
 
 func SendMessage(c echo.Context) error {
-    // Create MQTT client options
-    opts := MQTT.NewClientOptions()
-    opts.AddBroker("tcp://127.0.0.1:1883")
-    opts.SetDefaultPublishHandler(messagePubHandler)
-    opts.OnConnect = connectHandler
-    opts.OnConnectionLost = connectLostHandler
-
-    // Create the client and connect
-    client := MQTT.NewClient(opts)
-    if token := client.Connect(); token.Wait() && token.Error() != nil {
-        panic(token.Error())
-    }
-
     text := c.FormValue("message")
-    token := client.Publish(c.Param("chatId"), 0, false, text)
+
+    fmt.Println(c.Param("chatId"))
+
+    token := mqtt.Client.Publish(c.Param("chatId"), 0, false, text)
     token.Wait()
+
+    //Disconnect the client
+    //client.Disconnect(250)
+    // Unsubscribe from the topic
+    //if token := client.Unsubscribe(c.Param("chatId")); token.Wait() && token.Error() != nil {
+    //   fmt.Println(token.Error())
+    //   return c.String(http.StatusOK, c.FormValue("foo"))
+    //}
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "status": "success",
     })
-    // Unsubscribe from the topic
-    //if token := client.Unsubscribe(c.Param("chatId")); token.Wait() && token.Error() != nil {
-    //    fmt.Println(token.Error())
-    //    return c.String(http.StatusOK, c.FormValue("foo"))
-    //}
+}
 
-    // Disconnect the client
-    //client.Disconnect(250)
+func Search(c echo.Context) error {
+    var users []models.User
+
+    // Get the query parameter from the request
+    searchQuery := c.QueryParam("query")
+
+    // Build the SQL pattern string
+    pattern := "%" + searchQuery + "%"
+
+    // Define the query with a placeholder
+    query := `
+        SELECT * FROM users WHERE username LIKE ?;
+    `
+
+    // Execute the query with the pattern and handle potential errors
+    if err := db.Connection().Raw(query, pattern).Scan(&users).Error; err != nil {
+        // Return a 500 Internal Server Error if something goes wrong
+        return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+    }
+
+    // Construct the response
+    response := []interface{}{}
+    for _, user := range users {
+        response = append(response, map[string]interface{}{
+            "name":     user.Name,
+            "username": user.Username,
+            "status":   "Online",
+            "avatar":   "https://via.placeholder.com/50",
+        })
+    }
+
+    // Return the JSON response
+    return c.JSON(http.StatusOK, response)
 }
