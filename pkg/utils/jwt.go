@@ -23,9 +23,11 @@ func GenerateJWT(userID string) (Token, error) {
 
     tokenLifeTime, _ := strconv.Atoi(configs.JWT()["tokenLifeTime"])
 
+    expireAt := time.Now().Add(time.Hour * time.Duration(tokenLifeTime))
+
     claims := jwt.MapClaims{
         "name": userID,
-        "exp":  time.Now().Add(time.Hour * time.Duration(tokenLifeTime)).Unix(),
+        "exp":  expireAt.Unix(),
     }
 
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -38,7 +40,7 @@ func GenerateJWT(userID string) (Token, error) {
 
     return Token{
         AccessToken: tokenString,
-        ExpireAt:    time.Now().Add(time.Hour * time.Duration(tokenLifeTime)).Format("2006-01-02 15:04:05"),
+        ExpireAt:    expireAt.Format("2006-01-02 15:04:05"),
     }, nil
 }
 

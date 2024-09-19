@@ -6,6 +6,11 @@
     <title>Chat Application</title>
     <!-- Include Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script>
+        if (!localStorage.getItem('expire_at') || new Date(localStorage.getItem('expire_at')) < new Date()) {
+            window.location.href = '/chat/templates/login.html';
+        }
+    </script>
     <style>
         * {
             margin: 0;
@@ -55,9 +60,9 @@
 
         .search-icon {
             position: absolute;
-            top: 22px;
-            right: 15px;
-            font-size: 1.5rem;
+            top: 23px;
+            right: 18px;
+            font-size: 1.6rem;
             cursor: pointer;
             color: white;
         }
@@ -238,7 +243,14 @@
 
     <!-- Chat Container -->
     <div class="chat-container">
-        <header id="chat-header">Select a user to chat</header>
+        <header id="chat-header">
+            Select a user to chat
+            <span class="material-icons" id="logout-button"
+                  style="float: right; cursor: pointer; color: #000000; font-size: 2rem;">
+        logout
+    </span>
+        </header>
+
 
         <div id="message-container"></div>
 
@@ -263,7 +275,7 @@
 
             // Listen for incoming messages
             client.on('message', (topic, message) => {
-                const { message: msg, clientId: senderId } = JSON.parse(message.toString());
+                const {message: msg, clientId: senderId} = JSON.parse(message.toString());
                 addMessageToChat(msg, senderId == clientId);  // Show as "other" user message
             });
         }
@@ -337,7 +349,7 @@
     }
 
     function openChat(name, chatName) {
-        document.getElementById('chat-header').textContent = `Chat with ${name}`;
+        document.getElementById('chat-header').childNodes[0].textContent = `Chat with ${name}`;
         currentChatName = chatName; // Store the chatName globally
 
         const token = getToken();
@@ -406,6 +418,16 @@
     });
 
     fetchUsers(); // Initial fetch of users
+
+    document.getElementById('logout-button').addEventListener('click', function () {
+        // Clear local storage
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('clientId');
+        localStorage.removeItem('expire_at');
+
+        // Redirect to login page
+        window.location.href = '/chat/templates/login.html';
+    });
 </script>
 
 </body>

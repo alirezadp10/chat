@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <script>
+        if (localStorage.getItem('expire_at') && new Date(localStorage.getItem('expire_at')) > new Date()) {
+            window.location.href = '/chat/templates/chat.html';
+        }
+    </script>
     <style>
         * {
             margin: 0;
@@ -126,6 +131,7 @@
             .then(result => {
                 if (result.status === "success") {
                     localStorage.setItem('access_token', result.data.access_token);
+                    localStorage.setItem('expire_at', result.data.expire_at);
                     localStorage.setItem('clientId', result.data.client_id);
 
                     // Redirect or perform other actions after successful login
