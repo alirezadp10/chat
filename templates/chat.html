@@ -264,7 +264,7 @@
             // Listen for incoming messages
             client.on('message', (topic, message) => {
                 const { message: msg, clientId: senderId } = JSON.parse(message.toString());
-                addMessageToChat(msg, senderId !== clientId);  // Show as "other" user message
+                addMessageToChat(msg, senderId == clientId);  // Show as "other" user message
             });
         }
 

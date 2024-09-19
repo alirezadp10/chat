@@ -109,9 +109,27 @@ func SendMessage(c echo.Context) error {
         ClientID: user.ID,
     })
 
-    token := mqtt.Client.Publish(c.Param("chatName"), 0, false, messageData)
+    mqtt.Client.Publish(c.Param("chatName"), 0, false, messageData)
 
-    token.Wait()
+    var chat models.Chat
+
+    query := `SELECT id FROM chats where chats.name = ?;`
+
+    db.Connection().Raw(query, c.Param("chatName")).Scan(&chat)
+
+    newMessage := models.Message{
+        Content:  c.FormValue("message"),
+        ChatID:   chat.ID,
+        SenderID: user.ID,
+    }
+
+    result := db.Connection().Create(&newMessage)
+
+    if result.Error != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+            "message": result.Error.Error(),
+        })
+    }
 
     //Disconnect the client
     //client.Disconnect(250)
