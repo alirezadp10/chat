@@ -126,6 +126,7 @@
             .then(result => {
                 if (result.status === "success") {
                     localStorage.setItem('access_token', result.data.access_token);
+                    localStorage.setItem('clientId', result.data.client_id);
 
                     // Redirect or perform other actions after successful login
                     window.location.href = '/chat/templates/chat.html'; // Redirect to a dashboard or home page

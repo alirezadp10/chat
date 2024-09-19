@@ -1,7 +1,7 @@
 package controllers
 
 import (
-    "fmt"
+    "encoding/json"
     "github.com/alirezadp10/chat/internal/db"
     "github.com/alirezadp10/chat/internal/models"
     "github.com/alirezadp10/chat/internal/mqtt"
@@ -20,6 +20,11 @@ type ChatParticipant struct {
 type ChatMessage struct {
     models.Message
     models.User
+}
+
+type Message struct {
+    Message  string `json:"message"`
+    ClientID uint   `json:"clientId"`
 }
 
 func Chats(c echo.Context) error {
@@ -93,11 +98,19 @@ func ShowChat(c echo.Context) error {
 }
 
 func SendMessage(c echo.Context) error {
-    text := c.FormValue("message")
+    user, err := utils.GetAuthUser(c)
 
-    fmt.Println(c.Param("chatId"))
+    if err != nil {
+        return c.String(http.StatusNotFound, err.Error())
+    }
 
-    token := mqtt.Client.Publish(c.Param("chatId"), 0, false, text)
+    messageData, _ := json.Marshal(Message{
+        Message:  c.FormValue("message"),
+        ClientID: user.ID,
+    })
+
+    token := mqtt.Client.Publish(c.Param("chatName"), 0, false, messageData)
+
     token.Wait()
 
     //Disconnect the client

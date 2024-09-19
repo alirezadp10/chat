@@ -10,12 +10,11 @@ import (
     "sync"
 )
 
-func Connection() *gorm.DB {
-    var once sync.Once
-    var db *gorm.DB
-    var err error
+var db *gorm.DB
+var dbOnce sync.Once
 
-    once.Do(func() {
+func Connection() *gorm.DB {
+    dbOnce.Do(func() {
         newLogger := logger.New(
             log.New(log.Writer(), "\r\n", log.LstdFlags),
             logger.Config{
@@ -31,6 +30,7 @@ func Connection() *gorm.DB {
             configs.Mariadb()["database"],
         )
 
+        var err error
         db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
             Logger: newLogger,
         })
@@ -41,4 +41,14 @@ func Connection() *gorm.DB {
     })
 
     return db
+}
+
+func CloseConnection() {
+    sqlDB, err := Connection().DB()
+    if err != nil {
+        log.Println("Error getting the SQL DB:", err)
+        return
+    }
+    sqlDB.Close()
+    log.Println("Database connection closed")
 }

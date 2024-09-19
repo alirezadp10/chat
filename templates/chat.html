@@ -252,31 +252,24 @@
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <script>
     let searchTimeout;
-    let currentChatId = null; // Store chatId globally
+    let currentChatName = null; // Store chatName globally
     let allUsers = [];
     let client
+    let clientId = localStorage.getItem('clientId');
 
     function subscribe(cid) {
-        client = mqtt.connect('ws://localhost:9001');
+        if (!client) {
+            client = mqtt.connect('ws://localhost:9001');
 
-        // On successful connection
-        client.on('connect', function () {
-            // Subscribe to a topic
-            client.subscribe(cid, function (err) {
-                if (!err) {
-                    console.log('Subscribed to ' + cid);
-                } else {
-                    console.error('Subscription error: ', err);
-                }
+            // Listen for incoming messages
+            client.on('message', (topic, message) => {
+                const { message: msg, clientId: senderId } = JSON.parse(message.toString());
+                addMessageToChat(msg, senderId !== clientId);  // Show as "other" user message
             });
+        }
 
-            // Publish a message
-            client.publish('test/topic', 'Hello from the client-side!');
-        });
-
-        client.on('message', (topic, message) => {
-            addMessageToChat(message.toString(), false)
-        });
+        // Subscribe to the new chat topic (in case of chat switch)
+        client.subscribe(cid);
     }
 
     function getToken() {
@@ -343,12 +336,12 @@
             });
     }
 
-    function openChat(name, chatId) {
+    function openChat(name, chatName) {
         document.getElementById('chat-header').textContent = `Chat with ${name}`;
-        currentChatId = chatId; // Store the chatId globally
+        currentChatName = chatName; // Store the chatName globally
 
         const token = getToken();
-        fetch(`http://localhost:8080/chats/${chatId}`, {  // Use chatId in API call
+        fetch(`http://localhost:8080/chats/${chatName}`, {  // Use chatName in API call
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -367,7 +360,7 @@
 
                 messageContainer.scrollTop = messageContainer.scrollHeight;
 
-                subscribe(chatId)
+                subscribe(chatName)
             });
 
         document.getElementById('send-button').disabled = false;
@@ -376,9 +369,9 @@
     document.getElementById('send-button').addEventListener('click', function () {
         const message = document.getElementById('message-input').value.trim();
 
-        if (message && currentChatId) {  // Ensure chatId is available
+        if (message && currentChatName) {  // Ensure chatName is available
             const token = getToken();
-            fetch(`http://localhost:8080/chats/${currentChatId}/messages`, {  // Send message to chatId
+            fetch(`http://localhost:8080/chats/${currentChatName}/messages`, {  // Send message to chatName
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -390,9 +383,8 @@
             })
                 .then(response => response.json())
                 .then(() => {
-                    addMessageToChat(message, true);
                     document.getElementById('message-input').value = '';
-                    client.publish(currentChatId, message);  // Use chatId as the topic
+                    // client.publish(currentChatName, message);  // Use chatName as the topic
                 });
         }
     });

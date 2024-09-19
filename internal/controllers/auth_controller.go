@@ -42,6 +42,7 @@ func Login(c echo.Context) error {
         "status":  "success",
         "message": "User logged in successfully",
         "data": map[string]interface{}{
+            "client_id":    user.ID,
             "access_token": token.AccessToken,
             "expire_at":    token.ExpireAt,
         },

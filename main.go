@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-    db.Connection().AutoMigrate(&models.User{}, &models.Chat{}, &models.Message{}, &models.ChatParticipant{})
+    _ = db.Connection().AutoMigrate(&models.User{}, &models.Chat{}, &models.Message{}, &models.ChatParticipant{})
 
     cmd.Execute()
 }

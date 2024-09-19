@@ -25,7 +25,7 @@ var Client MQTT.Client
 func StartMQTT() MQTT.Client {
     // Create MQTT client options
     opts := MQTT.NewClientOptions()
-    opts.AddBroker("tcp://test.mosquitto.org:1883")
+    opts.AddBroker("tcp://localhost:1883")
     opts.SetDefaultPublishHandler(messagePubHandler)
     opts.OnConnect = connectHandler
     opts.OnConnectionLost = connectLostHandler
