@@ -7,23 +7,10 @@ import (
     "github.com/alirezadp10/chat/internal/mqtt"
     "github.com/alirezadp10/chat/pkg/utils"
     "github.com/labstack/echo/v4"
+    "gorm.io/gorm"
     "net/http"
 )
 
-type ChatParticipant struct {
-    UserID   uint
-    Name     string
-    Username string
-    Avatar   string
-    ChatName string
-}
-
-type ChatMessage struct {
-    models.Message
-    models.User
-}
-
-// TODO move to other place
 type Message struct {
     Message  string `json:"message"`
     ClientID uint   `json:"clientId"`
@@ -51,7 +38,13 @@ func Chats(c echo.Context) error {
         AND chat_participants.user_id != ?
     `
 
-    var chatParticipants []ChatParticipant
+    var chatParticipants []struct {
+        UserID   uint
+        Name     string
+        Username string
+        Avatar   string
+        ChatName string
+    }
 
     db.Connection().Raw(query, user.ID, user.ID).Scan(&chatParticipants)
 
@@ -72,7 +65,10 @@ func Chats(c echo.Context) error {
 }
 
 func ShowChat(c echo.Context) error {
-    var chatMessages []ChatMessage
+    var chatMessages []struct {
+        models.Message
+        models.User
+    }
 
     user, err := utils.GetAuthUser(c)
 
@@ -105,12 +101,41 @@ func ShowChat(c echo.Context) error {
     chatName := chat.Name
 
     if result.RowsAffected <= 0 {
-        //TODO transaction
-        chatName, _ = utils.RandomString(10)
-        newChat := models.Chat{Name: chatName}
-        db.Connection().Create(&newChat)
-        models.AddParticipant(newChat.ID, audience.ID)
-        models.AddParticipant(newChat.ID, user.ID)
+        err = db.Connection().Transaction(func(tx *gorm.DB) error {
+            // Generate chat name
+            chatName, err = utils.RandomString(10)
+            if err != nil {
+                return err // Return error to rollback
+            }
+
+            // Create new chat
+            newChat := models.Chat{Name: chatName}
+            if err = tx.Create(&newChat).Error; err != nil {
+                return err // Return error to rollback
+            }
+
+            // Add participants
+            newChatParticipant := models.ChatParticipant{ChatID: newChat.ID, UserID: audience.ID}
+            if err = tx.Create(&newChatParticipant).Error; err != nil {
+                return err // Return error to rollback
+            }
+
+            newChatParticipant = models.ChatParticipant{ChatID: newChat.ID, UserID: user.ID}
+            if err = tx.Create(&newChatParticipant).Error; err != nil {
+                return err // Return error to rollback
+            }
+
+            return nil // Return nil to commit the transaction
+        })
+
+        if err != nil {
+            // Handle the error (transaction is rolled back)
+            if err != nil {
+                return c.JSON(http.StatusInternalServerError, []interface{}{
+                    err.Error(),
+                })
+            }
+        }
     } else {
         query = `
             SELECT * FROM messages join chat.chats c on c.id = messages.chat_id where c.id = ?;
@@ -172,7 +197,6 @@ func SendMessage(c echo.Context) error {
             "message": result.Error.Error(),
         })
     }
-
     //Disconnect the client
     //client.Disconnect(250)
     // Unsubscribe from the topic

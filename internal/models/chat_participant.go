@@ -2,6 +2,7 @@ package models
 
 import (
     "github.com/alirezadp10/chat/internal/db"
+    "gorm.io/gorm"
     "time"
 )
 
@@ -13,7 +14,7 @@ type ChatParticipant struct {
     JoinedAt  time.Time
 }
 
-func AddParticipant(chatId uint, userId uint) ChatParticipant {
+func AddParticipant(tx *gorm.DB, chatId, userId uint) ChatParticipant {
     newChatParticipant := ChatParticipant{
         ChatID: chatId,
         UserID: userId,
