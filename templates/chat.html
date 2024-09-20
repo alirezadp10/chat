@@ -265,7 +265,7 @@
 <script>
     let searchTimeout;
     let currentChatName = null; // Store chatName globally
-    let allUsers = [];
+    let originalUsers = []; // Store the original user list
     let client
     let clientId = localStorage.getItem('clientId');
 
@@ -288,6 +288,7 @@
         return localStorage.getItem('access_token');
     }
 
+    // Fetch users and store them in originalUsers
     function fetchUsers() {
         const token = getToken();
         fetch('http://localhost:8080/chats', {
@@ -297,8 +298,10 @@
         })
             .then(response => response.json())
             .then(users => {
-                allUsers = users;
-                displayUsers(allUsers);
+                if (users) {
+                    originalUsers = users; // Save the original user list
+                    displayUsers(users);
+                }
             });
     }
 
@@ -309,7 +312,7 @@
         users.forEach(user => {
             const userElement = document.createElement('div');
             userElement.className = 'user';
-            userElement.onclick = () => openChat(user.name, user.chat_name); // Use chat_id here
+            userElement.onclick = () => openChat(user); // Use chat_id here
             userElement.innerHTML = `
                 <img src="${user.avatar}" alt="User Avatar">
                 <div class="user-info">
@@ -324,6 +327,11 @@
     function toggleSearchBar() {
         const searchBar = document.getElementById('search-bar');
         searchBar.classList.toggle('active');
+
+        // If the search bar is closed, restore the full user list
+        if (!searchBar.classList.contains('active')) {
+            displayUsers(originalUsers); // Show updated user list with new chat users
+        }
     }
 
     function debounceSearchUsers() {
@@ -331,10 +339,15 @@
         searchTimeout = setTimeout(() => searchUsers(), 500);
     }
 
+    // Search users
     function searchUsers() {
         const searchTerm = document.getElementById('user-search').value.trim();
 
-        if (searchTerm.length < 3) return; // Only search after 3 characters
+        if (searchTerm.length < 3) {
+            // If the search term is cleared or too short, restore the original user list
+            displayUsers(originalUsers);
+            return;
+        }
 
         const token = getToken();
         fetch(`http://localhost:8080/users/search?query=${searchTerm}`, {
@@ -348,12 +361,11 @@
             });
     }
 
-    function openChat(name, chatName) {
-        document.getElementById('chat-header').childNodes[0].textContent = `Chat with ${name}`;
-        currentChatName = chatName; // Store the chatName globally
+    function openChat(user) {
+        document.getElementById('chat-header').childNodes[0].textContent = `Chat with ${user.name}`;
 
         const token = getToken();
-        fetch(`http://localhost:8080/chats/${chatName}`, {  // Use chatName in API call
+        fetch(`http://localhost:8080/chats/${user.username}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -363,7 +375,7 @@
                 const messageContainer = document.getElementById('message-container');
                 messageContainer.innerHTML = '';
 
-                data.forEach(msg => {
+                data.messages.forEach(msg => {
                     const messageElement = document.createElement('div');
                     messageElement.classList.add('message', msg.is_self ? 'self' : 'other');
                     messageElement.innerHTML = `<p>${msg.message}</p>`;
@@ -372,7 +384,14 @@
 
                 messageContainer.scrollTop = messageContainer.scrollHeight;
 
-                subscribe(chatName)
+                currentChatName = data.chatName; // Store the chatName globally
+
+                subscribe(currentChatName);
+
+                // Add the user to the original user list if not already present
+                if (!originalUsers.some(u => u.username === user.username)) {
+                    originalUsers.push({ username: user.username, name: user.name, avatar: user.avatar, status: user.status }); // Add relevant details
+                }
             });
 
         document.getElementById('send-button').disabled = false;

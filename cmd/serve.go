@@ -30,7 +30,7 @@ func serve(cmd *cobra.Command, args []string) {
     // Authenticated routes
     e.GET("/users/search", controllers.Search, middlewares.Auth())
     e.GET("/chats", controllers.Chats, middlewares.Auth())
-    e.GET("/chats/:chatName", controllers.ShowChat, middlewares.Auth())
+    e.GET("/chats/:username", controllers.ShowChat, middlewares.Auth())
     e.POST("/chats/:chatName/messages", controllers.SendMessage, middlewares.Auth())
 
     e.Logger.Fatal(e.Start(":8080"))

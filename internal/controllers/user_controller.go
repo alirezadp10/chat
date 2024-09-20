@@ -10,7 +10,9 @@ func Home(c echo.Context) error {
     user, err := utils.GetAuthUser(c)
 
     if err != nil {
-        return c.String(http.StatusNotFound, err.Error())
+        return c.JSON(http.StatusNotFound, []interface{}{
+            err.Error(),
+        })
     }
 
     return c.String(http.StatusOK, "Welcome "+user.Email+"!")

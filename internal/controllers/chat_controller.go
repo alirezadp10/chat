@@ -11,6 +11,7 @@ import (
 )
 
 type ChatParticipant struct {
+    UserID   uint
     Name     string
     Username string
     Avatar   string
@@ -22,6 +23,7 @@ type ChatMessage struct {
     models.User
 }
 
+// TODO move to other place
 type Message struct {
     Message  string `json:"message"`
     ClientID uint   `json:"clientId"`
@@ -31,11 +33,13 @@ func Chats(c echo.Context) error {
     user, err := utils.GetAuthUser(c)
 
     if err != nil {
-        return c.String(http.StatusNotFound, err.Error())
+        return c.JSON(http.StatusUnauthorized, []interface{}{
+            err.Error(),
+        })
     }
 
     query := `
-        SELECT u.name as name, u.username as username, u.avatar_url as avatar, c.name as chat_name
+        SELECT u.id as user_id, u.name as name, u.username as username, u.avatar_url as avatar, c.name as chat_name
         FROM chat_participants
         JOIN chat.users u ON chat_participants.user_id = u.id
         JOIN chat.chats c ON c.id = chat_participants.chat_id
@@ -55,6 +59,7 @@ func Chats(c echo.Context) error {
 
     for _, participant := range chatParticipants {
         response = append(response, map[string]interface{}{
+            "user_id":   participant.UserID,
             "name":      participant.Name,
             "username":  participant.Username,
             "chat_name": participant.ChatName,
@@ -67,41 +72,78 @@ func Chats(c echo.Context) error {
 }
 
 func ShowChat(c echo.Context) error {
+    var chatMessages []ChatMessage
+
     user, err := utils.GetAuthUser(c)
 
     if err != nil {
-        return c.String(http.StatusNotFound, err.Error())
+        return c.JSON(http.StatusUnauthorized, []interface{}{
+            err.Error(),
+        })
     }
+    //-------------------------------------------------------------------------------------
+    var audience models.User
 
-    var messages []ChatMessage
+    db.Connection().Where("username = ?", c.Param("username")).Find(&audience)
+    //-------------------------------------------------------------------------------------
+    var chatID struct{ ID uint }
 
     query := `
-        SELECT * FROM messages join chat.chats c on c.id = messages.chat_id where c.name = ?;
+        SELECT chat_id as id FROM chat_participants WHERE user_id in (?,?) GROUP BY chat_id HAVING COUNT(DISTINCT user_id) = 2
     `
 
-    db.Connection().Raw(query, c.Param("chatName")).Scan(&messages)
+    db.Connection().Raw(query, audience.ID, user.ID).Scan(&chatID)
 
-    var response []interface{}
+    var chat models.Chat
 
-    for _, message := range messages {
+    query = `
+        SELECT * FROM chats WHERE id = ?
+    `
+
+    result := db.Connection().Raw(query, chatID.ID).Scan(&chat)
+
+    chatName := chat.Name
+
+    if result.RowsAffected <= 0 {
+        //TODO transaction
+        chatName, _ = utils.RandomString(10)
+        newChat := models.Chat{Name: chatName}
+        db.Connection().Create(&newChat)
+        models.AddParticipant(newChat.ID, audience.ID)
+        models.AddParticipant(newChat.ID, user.ID)
+    } else {
+        query = `
+            SELECT * FROM messages join chat.chats c on c.id = messages.chat_id where c.id = ?;
+        `
+        db.Connection().Raw(query, chat.ID).Scan(&chatMessages)
+    }
+
+    msgs := []interface{}{}
+
+    for _, message := range chatMessages {
         isSelf := false
         if message.SenderID == user.ID {
             isSelf = true
         }
-        response = append(response, map[string]interface{}{
+        msgs = append(msgs, map[string]interface{}{
             "message": message.Content,
             "is_self": isSelf,
         })
     }
 
-    return c.JSON(http.StatusOK, response)
+    return c.JSON(http.StatusOK, map[string]interface{}{
+        "messages": msgs,
+        "chatName": chatName,
+    })
 }
 
 func SendMessage(c echo.Context) error {
     user, err := utils.GetAuthUser(c)
 
     if err != nil {
-        return c.String(http.StatusNotFound, err.Error())
+        return c.JSON(http.StatusUnauthorized, []interface{}{
+            err.Error(),
+        })
     }
 
     messageData, _ := json.Marshal(Message{
@@ -168,6 +210,7 @@ func Search(c echo.Context) error {
     response := []interface{}{}
     for _, user := range users {
         response = append(response, map[string]interface{}{
+            "id":       user.ID,
             "name":     user.Name,
             "username": user.Username,
             "status":   "Online",
