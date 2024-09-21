@@ -2,12 +2,18 @@ package configs
 
 import (
     "github.com/joho/godotenv"
+    "log"
     "os"
     "strconv"
 )
 
 func getEnv(key, defaultValue string) string {
-    _ = godotenv.Load()
+    err := godotenv.Load()
+
+    if err != nil {
+        log.Default().Fatal("Error loading .env file: ", err)
+    }
+
     if value, exists := os.LookupEnv(key); exists {
         return value
     }
