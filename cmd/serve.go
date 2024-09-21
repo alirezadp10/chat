@@ -1,10 +1,12 @@
 package cmd
 
 import (
+    "github.com/alirezadp10/chat/internal/configs"
     "github.com/alirezadp10/chat/internal/controllers"
     "github.com/alirezadp10/chat/internal/middlewares"
     "github.com/alirezadp10/chat/internal/mqtt"
     "github.com/labstack/echo/v4"
+    "github.com/labstack/echo/v4/middleware"
     "github.com/spf13/cobra"
 )
 
@@ -22,6 +24,12 @@ func serve(cmd *cobra.Command, args []string) {
     mqtt.StartMQTT()
 
     e := echo.New()
+
+    e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+        AllowOrigins:     configs.Cors()["allowOrigins"].([]string),
+        AllowMethods:     configs.Cors()["allowMethods"].([]string),
+        AllowCredentials: configs.Cors()["allowCredentials"].(bool),
+    }))
 
     // Public routes
     e.POST("/login", controllers.Login)

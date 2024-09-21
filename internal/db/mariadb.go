@@ -42,13 +42,3 @@ func Connection() *gorm.DB {
 
     return db
 }
-
-func CloseConnection() {
-    sqlDB, err := Connection().DB()
-    if err != nil {
-        log.Println("Error getting the SQL DB:", err)
-        return
-    }
-    sqlDB.Close()
-    log.Println("Database connection closed")
-}

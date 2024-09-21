@@ -9,7 +9,6 @@ import (
     "github.com/golang-jwt/jwt/v5"
     "github.com/labstack/echo/v4"
     "gorm.io/gorm"
-    "strconv"
     "time"
 )
 
@@ -19,11 +18,9 @@ type Token struct {
 }
 
 func GenerateJWT(userID string) (Token, error) {
-    jwtSecret := []byte(configs.JWT()["secret"])
+    jwtSecret := []byte(configs.JWT()["secret"].(string))
 
-    tokenLifeTime, _ := strconv.Atoi(configs.JWT()["tokenLifeTime"])
-
-    expireAt := time.Now().Add(time.Hour * time.Duration(tokenLifeTime))
+    expireAt := time.Now().Add(time.Hour * time.Duration(configs.JWT()["tokenLifeTime"].(int)))
 
     claims := jwt.MapClaims{
         "name": userID,

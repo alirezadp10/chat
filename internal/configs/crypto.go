@@ -1,7 +1,7 @@
 package configs
 
-func Crypto() map[string]string {
-    return map[string]string{
-        "key": getEnv("APP_KEY", "examplekey123456"),
+func Crypto() map[string]interface{} {
+    return map[string]interface{}{
+        "key": App()["key"].(string),
     }
 }

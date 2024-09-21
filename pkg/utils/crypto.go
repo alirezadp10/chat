@@ -10,7 +10,7 @@ import (
 )
 
 func Encrypt(plainText []byte) ([]byte, error) {
-    block, err := aes.NewCipher([]byte(configs.Crypto()["key"]))
+    block, err := aes.NewCipher([]byte(configs.Crypto()["key"].(string)))
     if err != nil {
         return nil, err
     }
@@ -30,7 +30,7 @@ func Encrypt(plainText []byte) ([]byte, error) {
 }
 
 func Decrypt(cipherText []byte) ([]byte, error) {
-    block, err := aes.NewCipher([]byte(configs.Crypto()["key"]))
+    block, err := aes.NewCipher([]byte(configs.Crypto()["key"].(string)))
     if err != nil {
         return nil, err
     }

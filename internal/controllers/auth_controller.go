@@ -2,6 +2,7 @@ package controllers
 
 import (
     "errors"
+    "github.com/alirezadp10/chat/internal/configs"
     "github.com/alirezadp10/chat/internal/db"
     "github.com/alirezadp10/chat/internal/form_requests"
     "github.com/alirezadp10/chat/internal/models"
@@ -9,6 +10,7 @@ import (
     "github.com/labstack/echo/v4"
     "gorm.io/gorm"
     "net/http"
+    "time"
 )
 
 func Login(c echo.Context) error {
@@ -38,6 +40,8 @@ func Login(c echo.Context) error {
 
     token, _ := utils.GenerateJWT(user.Username)
 
+    setCookie(c, token)
+
     return c.JSON(http.StatusOK, map[string]interface{}{
         "status":  "success",
         "message": "User logged in successfully",
@@ -47,6 +51,18 @@ func Login(c echo.Context) error {
             "expire_at":    token.ExpireAt,
         },
     })
+}
+
+func setCookie(c echo.Context, token utils.Token) {
+    cookie := new(http.Cookie)
+    cookie.Name = "access_token"
+    cookie.Value = token.AccessToken
+    cookie.HttpOnly = true
+    cookie.Secure = configs.Cookie()["secure"].(bool)
+    cookie.Path = "/"
+    expireAt, _ := time.Parse("2006-01-02 15:04:05", token.ExpireAt)
+    cookie.Expires = expireAt
+    c.SetCookie(cookie)
 }
 
 func Register(c echo.Context) error {

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <script>
+        //TODO fix this
         if (localStorage.getItem('expire_at') && new Date(localStorage.getItem('expire_at')) > new Date()) {
             window.location.href = '/chat/templates/chat.html';
         }
@@ -125,7 +126,8 @@
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            credentials: 'include' // This allows cookies to be sent and received
         })
             .then(response => response.json())
             .then(result => {
