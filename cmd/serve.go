@@ -28,20 +28,19 @@ func serve(cmd *cobra.Command, args []string) {
 
     // TODO use pipeline
     e.Use(middleware.CORSWithConfig(configs.Cors()))
-    e.Use(middlewares.Cookie)
-    e.Use(echojwt.WithConfig(echojwt.Config{
-        SigningKey: []byte(configs.JWT()["secret"].(string)),
-    }))
 
     // Public routes
     e.POST("/login", controllers.Login)
     e.POST("/register", controllers.Register)
 
     // Authenticated routes
-    e.GET("/users/search", controllers.Search, middlewares.Auth())
-    e.GET("/chats", controllers.Chats, middlewares.Auth())
-    e.GET("/chats/:username", controllers.ShowChat, middlewares.Auth())
-    e.POST("/chats/:chatName/messages", controllers.SendMessage, middlewares.Auth())
+    authGroup := e.Group("/api", middlewares.Cookie, echojwt.WithConfig(echojwt.Config{
+        SigningKey: []byte(configs.JWT()["secret"].(string)),
+    }))
+    authGroup.GET("/users/search", controllers.Search, middlewares.Auth())
+    authGroup.GET("/chats", controllers.Chats, middlewares.Auth())
+    authGroup.GET("/chats/:username", controllers.ShowChat, middlewares.Auth())
+    authGroup.POST("/chats/:chatName/messages", controllers.SendMessage, middlewares.Auth())
 
     e.Logger.Fatal(e.Start(configs.App()["url"].(string)))
 }
