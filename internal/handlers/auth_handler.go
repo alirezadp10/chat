@@ -1,4 +1,4 @@
-package controllers
+package handlers
 
 import (
     "errors"
@@ -66,6 +66,8 @@ func setCookie(c echo.Context, token utils.Token) {
 }
 
 func Register(c echo.Context) error {
+    //TODO sanitize input
+
     newUser, err := form_requests.RegisterFormRequest(c)
 
     if err != nil {
