@@ -81,6 +81,7 @@
             color: #3498db;
         }
     </style>
+    <script src="../assets/js/config.js"></script>
 </head>
 <body>
 
@@ -115,7 +116,7 @@
             password: formData.get('password')
         };
 
-        fetch('http://localhost:8080/login', {
+        fetch(`${window.env.API_HOST}/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

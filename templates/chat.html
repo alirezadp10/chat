@@ -218,6 +218,7 @@
             background-color: #3498db;
         }
     </style>
+    <script src="../assets/js/config.js"></script>
 </head>
 <body>
 
@@ -281,8 +282,7 @@
 
     // Fetch users and store them in originalUsers
     function fetchUsers() {
-        //TODO fix this
-        fetch('http://localhost:8080/chats', {
+        fetch(`${window.env.API_HOST}/chats`, {
             credentials: 'include'
         })
             .then(response => response.json())
@@ -338,7 +338,7 @@
             return;
         }
 
-        fetch(`http://localhost:8080/users/search?query=${searchTerm}`, {
+        fetch(`${window.env.API_HOST}/users/search?query=${searchTerm}`, {
             credentials: 'include'
         })
             .then(response => response.json())
@@ -350,7 +350,7 @@
     function openChat(user) {
         document.getElementById('chat-header').childNodes[0].textContent = `Chat with ${user.name}`;
 
-        fetch(`http://localhost:8080/chats/${user.username}`, {
+        fetch(`${window.env.API_HOST}/chats/${user.username}`, {
             credentials: 'include'
         })
             .then(response => response.json())
@@ -384,7 +384,7 @@
         const message = document.getElementById('message-input').value.trim();
 
         if (message && currentChatName) {  // Ensure chatName is available
-            fetch(`http://localhost:8080/chats/${currentChatName}/messages`, {  // Send message to chatName
+            fetch(`${window.env.API_HOST}/chats/${currentChatName}/messages`, {  // Send message to chatName
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

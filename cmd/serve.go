@@ -43,5 +43,5 @@ func serve(cmd *cobra.Command, args []string) {
     e.GET("/chats/:username", controllers.ShowChat, middlewares.Auth())
     e.POST("/chats/:chatName/messages", controllers.SendMessage, middlewares.Auth())
 
-    e.Logger.Fatal(e.Start(":8080"))
+    e.Logger.Fatal(e.Start(configs.App()["url"].(string)))
 }

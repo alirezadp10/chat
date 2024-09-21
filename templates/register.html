@@ -90,6 +90,7 @@
             color: #3498db;
         }
     </style>
+    <script src="../assets/js/config.js"></script>
 </head>
 <body>
 
@@ -157,7 +158,7 @@
             avatar: formData.get('avatar')
         };
 
-        fetch('http://localhost:8080/register', {
+        fetch(`${window.env.API_HOST}/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
