@@ -7,7 +7,5 @@ import (
 )
 
 func Auth() echo.MiddlewareFunc {
-    return echojwt.WithConfig(echojwt.Config{
-        SigningKey: []byte(configs.JWT()["secret"].(string)),
-    })
+    return echojwt.JWT([]byte(configs.JWT()["secret"].(string)))
 }

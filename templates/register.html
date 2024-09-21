@@ -4,11 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
-    <script>
-        if (localStorage.getItem('expire_at') && new Date(localStorage.getItem('expire_at')) > new Date()) {
-            window.location.href = '/chat/templates/chat.html';
-        }
-    </script>
     <style>
         * {
             margin: 0;
@@ -167,7 +162,8 @@
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            credentials: 'include'
         })
             .then(response => response.json())
             .then(result => {

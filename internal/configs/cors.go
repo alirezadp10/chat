@@ -1,17 +1,20 @@
 package configs
 
-func Cors() map[string]interface{} {
+import "github.com/labstack/echo/v4/middleware"
+
+func Cors() middleware.CORSConfig {
     allowOrigins := []string{"*"}
 
     if App()["env"] != "production" {
+        allowOrigins = []string{}
         allowOrigins = append(allowOrigins, "http://localhost:63342")
     }
 
-    allowMethods := []string{"GET", "POST", "PUT", "DELETE"}
+    allowMethods := []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}
 
-    return map[string]interface{}{
-        "allowOrigins":     allowOrigins,
-        "allowMethods":     allowMethods,
-        "allowCredentials": true,
+    return middleware.CORSConfig{
+        AllowOrigins:     allowOrigins,
+        AllowMethods:     allowMethods,
+        AllowCredentials: true,
     }
 }

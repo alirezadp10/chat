@@ -5,6 +5,7 @@ import (
     "github.com/alirezadp10/chat/internal/controllers"
     "github.com/alirezadp10/chat/internal/middlewares"
     "github.com/alirezadp10/chat/internal/mqtt"
+    echojwt "github.com/labstack/echo-jwt/v4"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
     "github.com/spf13/cobra"
@@ -25,10 +26,11 @@ func serve(cmd *cobra.Command, args []string) {
 
     e := echo.New()
 
-    e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-        AllowOrigins:     configs.Cors()["allowOrigins"].([]string),
-        AllowMethods:     configs.Cors()["allowMethods"].([]string),
-        AllowCredentials: configs.Cors()["allowCredentials"].(bool),
+    // TODO use pipeline
+    e.Use(middleware.CORSWithConfig(configs.Cors()))
+    e.Use(middlewares.Cookie)
+    e.Use(echojwt.WithConfig(echojwt.Config{
+        SigningKey: []byte(configs.JWT()["secret"].(string)),
     }))
 
     // Public routes
